@@ -31,11 +31,17 @@ let updateRoot = hydrate({
 // A very simple router. When we navigate, we'll fetch a new RSC payload from the server,
 // and in a React transition, stream in the new page. Once complete, we'll pushState to
 // update the URL in the browser.
-async function navigate(pathname: string, push = false) {
+async function navigate(
+  pathname: string,
+  mutateHistory: "push" | "replace" | undefined = undefined,
+) {
   let root = await fetchRSC<ReactNode>(pathname);
   updateRoot(root, () => {
-    if (push) {
+    if (mutateHistory === "push") {
       history.pushState(null, "", pathname);
+    }
+    if (mutateHistory === "replace") {
+      history.replaceState(null, "", pathname);
     }
   });
 }
@@ -58,7 +64,24 @@ document.addEventListener("click", (e) => {
     !e.defaultPrevented
   ) {
     e.preventDefault();
-    navigate(link.pathname, true);
+    navigate(link.pathname, "push");
+  }
+});
+
+document.addEventListener("submit", (e) => {
+  let form = e.target as HTMLFormElement;
+  if (form.method !== "POST") {
+    e.preventDefault();
+    const formData = new FormData(form);
+    // @ts-expect-error: https://github.com/microsoft/TypeScript/issues/30584
+    const searchParams = new URLSearchParams(formData);
+    const baseUrl = new URL(form.action);
+
+    const isReplace = form.dataset.rscReplace === "true";
+    navigate(
+      `${baseUrl.pathname}?${searchParams.toString()}`,
+      isReplace ? "replace" : "push",
+    );
   }
 });
 

@@ -22,6 +22,16 @@ let posts: Post[] = [
       name: "Usher",
     },
   },
+  {
+    id: "3",
+    title: "Post 3",
+    content: "Content 3",
+    likeCount: 30,
+    isLikedByUser: false,
+    author: {
+      name: "Fish",
+    },
+  },
 ];
 
 const friendLikes: FriendLike[] = [
@@ -47,8 +57,8 @@ export async function getPost(id: string) {
   return post;
 }
 
-export async function getRecentPostIds() {
-  return ["1", "2"];
+export async function getRecentPostIds(limit: number) {
+  return posts.slice(0, limit).map((post) => post.id);
 }
 
 export async function getFriendLikes(postId: string) {

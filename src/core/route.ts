@@ -1,19 +1,27 @@
 import type { JSX } from "react";
 
-interface PageProps<T extends Record<string, string> = Record<string, never>> {
-  params: T;
+interface PageProps<
+  P extends Record<string, string> = Record<string, never>,
+  S extends Record<string, string | string[]> = Record<string, never>,
+> {
+  params: P;
+  searchParams: S;
 }
 
 export interface Route<
-  T extends Record<string, string> = Record<string, never>,
+  P extends Record<string, string> = Record<string, never>,
+  S extends Record<string, string> = Record<string, never>,
 > {
   path: string;
-  component: (props: PageProps<T>) => Promise<JSX.Element>;
+  component: (props: PageProps<P, S>) => Promise<JSX.Element>;
 }
 
-export function route<T extends Record<string, string> = Record<string, never>>(
+export function route<
+  P extends Record<string, string> = Record<string, never>,
+  S extends Record<string, string> = Record<string, never>,
+>(
   path: string,
-  component: (props: PageProps<T>) => Promise<JSX.Element>,
-): Route<T> {
+  component: (props: PageProps<P, S>) => Promise<JSX.Element>,
+): Route<P, S> {
   return { path, component };
 }

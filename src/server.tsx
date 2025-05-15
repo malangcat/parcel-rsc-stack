@@ -12,11 +12,17 @@ app.use(express.static("dist"));
 for (const route of routes) {
   app.get(route.path, async (req, res) => {
     const params = req.params;
+    const searchParams = req.query;
     const Comp = route.component as ComponentType<any>;
 
-    await renderRequest(req, res, <Comp params={params} />, {
-      component: Comp,
-    });
+    await renderRequest(
+      req,
+      res,
+      <Comp params={params} searchParams={searchParams} />,
+      {
+        component: Comp,
+      },
+    );
   });
 
   app.post(route.path, async (req, res) => {
@@ -25,7 +31,8 @@ for (const route of routes) {
 
     const Comp = route.component as ComponentType<any>;
     const params = req.params;
-    let root: any = <Comp params={params} />;
+    const searchParams = req.query;
+    let root: any = <Comp params={params} searchParams={searchParams} />;
     if (id) {
       root = { result, root };
     }
