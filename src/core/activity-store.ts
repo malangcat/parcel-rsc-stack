@@ -11,15 +11,22 @@ const idSet = new Set<string>();
 const listeners = new Set<() => void>();
 
 export const activityStore = {
+  // Actually upsert, I am lazy
   push: (id: string, node: React.ReactNode) => {
     if (idSet.has(id)) {
-      return;
+      activities = activities.map((activity) => {
+        if (activity.id === id) {
+          return { ...activity, node };
+        }
+        return activity;
+      });
+    } else {
+      idSet.add(id);
+      activities = [
+        ...activities,
+        { id, index: activities.length, present: true, node },
+      ];
     }
-    idSet.add(id);
-    activities = [
-      ...activities,
-      { id, index: activities.length, present: true, node },
-    ];
     listeners.forEach((listener) => listener());
   },
   pop: () => {
