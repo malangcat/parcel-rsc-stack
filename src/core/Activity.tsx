@@ -2,7 +2,7 @@
 
 import { Slot } from "@radix-ui/react-slot";
 import type * as React from "react";
-import { createContext, useContext, useEffect, useMemo } from "react";
+import { createContext, useContext, useEffect } from "react";
 import { ActivityState } from "./activity-store";
 import { useActivityStore } from "./useActivityStore";
 import { usePresence } from "./usePresence";
