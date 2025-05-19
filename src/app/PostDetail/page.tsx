@@ -1,6 +1,5 @@
 "use server-entry";
 
-import "../../client";
 import { Activity } from "../../core/Activity";
 import { AppScreen } from "../../ui/AppScreen";
 import { Post } from "../_Post/Post";

@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { hydrate, fetchRSC } from "@parcel/rsc/client";
 import { activityStore } from "./core/activity-store";
 
+console.log("LOADED");
+
 activityStore.reset();
 activityStore.push(location.pathname);
 

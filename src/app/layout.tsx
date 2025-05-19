@@ -1,3 +1,5 @@
+import "../client";
+
 export async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html

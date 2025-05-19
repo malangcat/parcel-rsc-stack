@@ -3,8 +3,9 @@ import express from "express";
 
 // Page components. These must have "use server-entry" so they are treated as code splitting entry points.
 import { ComponentType } from "react";
-import { flattenRoutes } from "./core/route";
-import { HistoryRenderer, routes } from "./routes";
+import { buildRouteComponent, flattenRoutes } from "./core/route";
+import { routes } from "./routes";
+import { renderRSC } from "@parcel/rsc/node";
 
 const app = express();
 
@@ -13,7 +14,7 @@ app.use(express.static("dist"));
 const flattenedRoutes = flattenRoutes(routes);
 
 for (const route of flattenedRoutes) {
-  const Comp = route.component as ComponentType<any>;
+  const Comp = buildRouteComponent(route);
 
   app.get(route.path, async (req, res) => {
     const params = req.params;
@@ -22,13 +23,22 @@ for (const route of flattenedRoutes) {
     await renderRequest(
       req,
       res,
-      <HistoryRenderer
-        history={[{ index: 0, path: route.path, present: true }]}
-      />,
+      <Comp params={params} searchParams={searchParams} />,
       {
-        component: Comp,
+        component: Comp as ComponentType,
       },
     );
+  });
+
+  app.get(route.path + ".rsc", async (req, res) => {
+    const params = req.params;
+    const searchParams = req.query;
+
+    let stream = renderRSC(
+      <route.component params={params} searchParams={searchParams} />,
+    );
+    res.set("Content-Type", "text/x-component");
+    stream.pipe(res);
   });
 
   app.post(route.path, async (req, res) => {
@@ -37,16 +47,12 @@ for (const route of flattenedRoutes) {
 
     const params = req.params;
     const searchParams = req.query;
-    let root: any = (
-      <HistoryRenderer
-        history={[{ index: 0, path: route.path, present: true }]}
-      />
-    );
+    let root: any = <Comp params={params} searchParams={searchParams} />;
 
     if (id) {
       root = { result, root };
     }
-    await renderRequest(req, res, root, { component: Comp });
+    await renderRequest(req, res, root, { component: Comp as ComponentType });
   });
 }
 

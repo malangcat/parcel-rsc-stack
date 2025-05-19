@@ -9,26 +9,13 @@ import { usePresence } from "./usePresence";
 
 export const ActivityContext = createContext<ActivityState | null>(null);
 
-export const RscActivityProvider = (props: {
-  state?: ActivityState;
-  path: string;
-  children?: React.ReactNode;
+export const ActivityProvider = (props: {
+  state: ActivityState;
+  children: React.ReactNode;
 }) => {
-  const { activities } = useActivityStore();
-  const clientMatchedActivity = activities.find((a) => a.path === props.path);
-
-  const state = props.state ?? clientMatchedActivity;
-  const childRef = useRef(props.children);
-
-  useEffect(() => {
-    childRef.current = props.children;
-  }, [props.children]);
-
-  if (!state) return null;
-
   return (
-    <ActivityContext.Provider value={state}>
-      {props.children ?? childRef.current}
+    <ActivityContext.Provider value={props.state}>
+      {props.children}
     </ActivityContext.Provider>
   );
 };

@@ -1,8 +1,7 @@
 import type { JSX } from "react";
-import { RscActivityProvider } from "./Activity";
-import { ActivityState } from "./activity-store";
+import { ActivityProvider } from "./Activity";
 
-interface PageProps<
+export interface PageProps<
   P extends Record<string, string> = Record<string, never>,
   S extends Record<string, string | string[]> = Record<string, never>,
 > {
@@ -10,7 +9,7 @@ interface PageProps<
   searchParams: S;
 }
 
-interface LayoutProps<
+export interface LayoutProps<
   P extends Record<string, string> = Record<string, never>,
 > {
   params: P;
@@ -26,7 +25,7 @@ export interface PageRoute<
   component: (props: PageProps<P, S>) => JSX.Element | Promise<JSX.Element>;
 }
 
-interface LayoutRoute<
+export interface LayoutRoute<
   P extends Record<string, string> = Record<string, never>,
 > {
   type: "layout";
@@ -90,56 +89,38 @@ export function flattenRoutes(
   return flattenedResult;
 }
 
-export function buildHistoryComponent(routes: (PageRoute | LayoutRoute)[]) {
-  function buildComponentRecursive(
-    route: PageRoute | LayoutRoute,
-    history: ActivityState[],
-  ) {
-    if (route.type === "layout") {
-      const Layout = route.component;
-      const children = route.children
-        .map((child) => buildComponentRecursive(child, history))
-        .filter((c) => c !== undefined);
+export function buildRouteComponent(
+  flatRoute: FlattenedRoute,
+): React.ComponentType<PageProps<any, any>> {
+  const { path, layouts, component: Page } = flatRoute;
 
+  function buildComponentRecursive(
+    index: number,
+    currentProps: PageProps<any, any>,
+  ) {
+    if (index >= layouts.length) {
       return (
-        <Layout key={route.component.toString()} params={{}}>
-          {children}
-        </Layout>
+        <ActivityProvider
+          key={path}
+          state={{
+            index: 0,
+            path: path,
+            present: true,
+          }}
+        >
+          <Page key={path + index.toString()} {...currentProps} />
+        </ActivityProvider>
       );
     }
-    if (route.type === "page") {
-      const state = history.find((h) => h.path === route.path);
 
-      if (state) {
-        const Page = route.component;
-        return (
-          <RscActivityProvider key={route.path} path={route.path} state={state}>
-            <Page params={{}} searchParams={{}} />
-          </RscActivityProvider>
-        );
-      } else {
-        return <RscActivityProvider key={route.path} path={route.path} />;
-      }
-    }
+    const layoutDefinition = layouts[index];
+    const Layout = layoutDefinition.component;
+    return (
+      <Layout key={path + index.toString()} params={currentProps.params}>
+        {buildComponentRecursive(index + 1, currentProps)}
+      </Layout>
+    );
   }
 
-  return (props: { history: ActivityState[] }) => {
-    return (
-      <>
-        {routes.map((route) => buildComponentRecursive(route, props.history))}
-      </>
-    );
-  };
-}
-
-export function buildRouteResolver(routes: (PageRoute | LayoutRoute)[]) {
-  const flattened = flattenRoutes(routes);
-  const routeMap = new Map(flattened.map((r) => [r.path, r]));
-  return (path: string) => {
-    const found = routeMap.get(path);
-    if (!found) {
-      throw new Error("Failed to resolve component for: " + path);
-    }
-    return found;
-  };
+  return (props: PageProps<any, any>) => buildComponentRecursive(0, props);
 }
