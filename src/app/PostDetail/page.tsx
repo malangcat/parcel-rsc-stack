@@ -3,7 +3,6 @@
 import "../../client";
 import { Activity } from "../../core/Activity";
 import { AppScreen } from "../../ui/AppScreen";
-import { Document } from "../../ui/Document";
 import { Post } from "../_Post/Post";
 
 export async function PostDetail({
@@ -16,12 +15,10 @@ export async function PostDetail({
   const postId = params.postId;
 
   return (
-    <Document title="Post">
-      <Activity id="post-detail">
-        <AppScreen>
-          <Post postId={postId} truncateContent={false} />
-        </AppScreen>
-      </Activity>
-    </Document>
+    <Activity>
+      <AppScreen>
+        <Post postId={postId} truncateContent={false} />
+      </AppScreen>
+    </Activity>
   );
 }

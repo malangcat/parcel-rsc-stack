@@ -2,23 +2,29 @@ import { callAction, renderRequest } from "@parcel/rsc/node";
 import express from "express";
 
 // Page components. These must have "use server-entry" so they are treated as code splitting entry points.
-import { routes } from "./routes";
 import { ComponentType } from "react";
+import { flattenRoutes } from "./core/route";
+import { HistoryRenderer, routes } from "./routes";
 
 const app = express();
 
 app.use(express.static("dist"));
 
-for (const route of routes) {
+const flattenedRoutes = flattenRoutes(routes);
+
+for (const route of flattenedRoutes) {
+  const Comp = route.component as ComponentType<any>;
+
   app.get(route.path, async (req, res) => {
     const params = req.params;
     const searchParams = req.query;
-    const Comp = route.component as ComponentType<any>;
 
     await renderRequest(
       req,
       res,
-      <Comp params={params} searchParams={searchParams} />,
+      <HistoryRenderer
+        history={[{ index: 0, path: route.path, present: true }]}
+      />,
       {
         component: Comp,
       },
@@ -29,10 +35,14 @@ for (const route of routes) {
     let id = req.get("rsc-action-id");
     let { result } = await callAction(req, id);
 
-    const Comp = route.component as ComponentType<any>;
     const params = req.params;
     const searchParams = req.query;
-    let root: any = <Comp params={params} searchParams={searchParams} />;
+    let root: any = (
+      <HistoryRenderer
+        history={[{ index: 0, path: route.path, present: true }]}
+      />
+    );
+
     if (id) {
       root = { result, root };
     }

@@ -1,9 +1,9 @@
 "use client";
 
-import "./AppScreen.css";
 import type * as React from "react";
-import { useActivityContext } from "../core/Activity";
 import { forwardRef } from "react";
+import { useActivityContext } from "../core/Activity";
+import "./animation.css";
 
 export interface AppScreenProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -32,7 +32,6 @@ export const AppScreen = forwardRef<
       ref={ref}
       style={{
         position: "absolute",
-        zIndex: activity.index,
         top: 0,
         left: 0,
         right: 0,

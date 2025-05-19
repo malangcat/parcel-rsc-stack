@@ -4,6 +4,9 @@ import type { ReactNode } from "react";
 import { hydrate, fetchRSC } from "@parcel/rsc/client";
 import { activityStore } from "./core/activity-store";
 
+activityStore.reset();
+activityStore.push(location.pathname);
+
 let updateRoot = hydrate({
   // Setup a callback to perform server actions.
   // This sends a POST request to the server, and updates the page with the response.
@@ -24,6 +27,7 @@ let updateRoot = hydrate({
   // Intercept HMR window reloads, and do it with RSC instead.
   onHmrReload() {
     activityStore.reset();
+    activityStore.push(location.pathname);
     navigate(location.pathname);
   },
 });
@@ -36,6 +40,9 @@ async function navigate(
   mutateHistory: "push" | "replace" | undefined = undefined,
 ) {
   let root = await fetchRSC<ReactNode>(pathname);
+  if (mutateHistory === "push") {
+    activityStore.push(pathname);
+  }
   updateRoot(root, () => {
     if (mutateHistory === "push") {
       history.pushState(null, "", pathname);
@@ -70,7 +77,7 @@ document.addEventListener("click", (e) => {
 
 document.addEventListener("submit", (e) => {
   let form = e.target as HTMLFormElement;
-  if (form.method !== "POST") {
+  if (!form.action.startsWith("javascript:")) {
     e.preventDefault();
     const formData = new FormData(form);
     // @ts-expect-error: https://github.com/microsoft/TypeScript/issues/30584

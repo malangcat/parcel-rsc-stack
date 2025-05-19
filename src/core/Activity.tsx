@@ -2,46 +2,36 @@
 
 import { Slot } from "@radix-ui/react-slot";
 import type * as React from "react";
-import { createContext, useContext, useEffect } from "react";
+import { createContext, useContext, useEffect, useRef } from "react";
 import { ActivityState } from "./activity-store";
 import { useActivityStore } from "./useActivityStore";
 import { usePresence } from "./usePresence";
 
-export interface ActivityProps {
-  children: React.ReactNode;
+export const ActivityContext = createContext<ActivityState | null>(null);
 
-  id: string;
-}
+export const RscActivityProvider = (props: {
+  state?: ActivityState;
+  path: string;
+  children?: React.ReactNode;
+}) => {
+  const { activities } = useActivityStore();
+  const clientMatchedActivity = activities.find((a) => a.path === props.path);
 
-export function Activity({ children, id }: ActivityProps) {
-  useActivityMount({
-    children,
-    id,
-  });
+  const state = props.state ?? clientMatchedActivity;
+  const childRef = useRef(props.children);
 
-  return <ActivityRenderer />;
-}
-
-function useActivityMount({ children, id }: ActivityProps) {
-  const { push } = useActivityStore();
   useEffect(() => {
-    push(id, children);
-  }, [children, id, push]);
-}
+    childRef.current = props.children;
+  }, [props.children]);
 
-function ActivityPresence({ activity }: { activity: ActivityState }) {
-  const { unmount } = useActivityStore();
-  const { ref } = usePresence({
-    present: activity.present,
-    onUnmount: () => {
-      unmount(activity.id);
-    },
-  });
+  if (!state) return null;
 
-  return <Slot ref={ref}>{activity.node}</Slot>;
-}
-
-const ActivityContext = createContext<ActivityState | null>(null);
+  return (
+    <ActivityContext.Provider value={state}>
+      {props.children ?? childRef.current}
+    </ActivityContext.Provider>
+  );
+};
 
 export function useActivityContext() {
   const context = useContext(ActivityContext);
@@ -51,12 +41,23 @@ export function useActivityContext() {
   return context;
 }
 
-function ActivityRenderer() {
-  const { activities } = useActivityStore();
+export interface ActivityProps {
+  children: React.ReactNode;
+}
 
-  return activities.map((activity) => (
-    <ActivityContext.Provider key={activity.id} value={activity}>
-      <ActivityPresence activity={activity} />
-    </ActivityContext.Provider>
-  ));
+export function Activity({ children }: ActivityProps) {
+  const state = useActivityContext();
+  const { unmount } = useActivityStore();
+  const { ref } = usePresence({
+    present: state?.present ?? false,
+    onUnmount: () => {
+      unmount(state?.path ?? "");
+    },
+  });
+
+  if (!state) {
+    return null;
+  }
+
+  return <Slot ref={ref}>{children}</Slot>;
 }

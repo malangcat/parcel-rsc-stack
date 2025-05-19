@@ -1,10 +1,4 @@
-export interface DocumentProps {
-  title: string;
-
-  children: React.ReactNode;
-}
-
-export async function Document(props: DocumentProps) {
+export async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
@@ -13,7 +7,7 @@ export async function Document(props: DocumentProps) {
       // data-seed-color-mode="system"
     >
       <head>
-        <title>{props.title}</title>
+        <title>test</title>
         <meta charSet="utf-8" />
         <meta
           name="viewport"
@@ -25,7 +19,7 @@ export async function Document(props: DocumentProps) {
           type="image/x-icon"
         />
       </head>
-      <body>{props.children}</body>
+      <body>{children}</body>
     </html>
   );
 }
