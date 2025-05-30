@@ -2,20 +2,15 @@ import { callAction, renderRequest } from "@parcel/rsc/node";
 import express from "express";
 
 // Page components. These must have "use server-entry" so they are treated as code splitting entry points.
-import { ComponentType } from "react";
-import { buildRouteComponent, flattenRoutes } from "./core/route";
-import { routes } from "./routes";
 import { renderRSC } from "@parcel/rsc/node";
+import { ComponentType } from "react";
+import { rscRoutes, ssrRoutes } from "./routes";
 
 const app = express();
 
 app.use(express.static("dist"));
 
-const flattenedRoutes = flattenRoutes(routes);
-
-for (const route of flattenedRoutes) {
-  const Comp = buildRouteComponent(route);
-
+for (const route of ssrRoutes) {
   app.get(route.path, async (req, res) => {
     const params = req.params;
     const searchParams = req.query;
@@ -23,23 +18,13 @@ for (const route of flattenedRoutes) {
     await renderRequest(
       req,
       res,
-      <Comp params={params} searchParams={searchParams} />,
+      <route.Comp params={params} searchParams={searchParams} />,
       {
-        component: Comp as ComponentType,
+        component: route.Comp as ComponentType,
       },
     );
   });
 
-  app.get(route.path + ".rsc", async (req, res) => {
-    const params = req.params;
-    const searchParams = req.query;
-
-    let stream = renderRSC(
-      <route.component params={params} searchParams={searchParams} />,
-    );
-    res.set("Content-Type", "text/x-component");
-    stream.pipe(res);
-  });
 
   app.post(route.path, async (req, res) => {
     let id = req.get("rsc-action-id");
@@ -47,12 +32,25 @@ for (const route of flattenedRoutes) {
 
     const params = req.params;
     const searchParams = req.query;
-    let root: any = <Comp params={params} searchParams={searchParams} />;
+    let root: any = <route.Comp params={params} searchParams={searchParams} />;
 
     if (id) {
       root = { result, root };
     }
-    await renderRequest(req, res, root, { component: Comp as ComponentType });
+    await renderRequest(req, res, root, { component: route.Comp as ComponentType });
+  });
+}
+
+for (const route of rscRoutes) {
+  app.get(route.path + ".rsc", async (req, res) => {
+    const params = req.params;
+    const searchParams = req.query;
+
+    let stream = renderRSC(
+      <route.Comp params={params} searchParams={searchParams} />,
+    );
+    res.set("Content-Type", "text/x-component");
+    stream.pipe(res);
   });
 }
 

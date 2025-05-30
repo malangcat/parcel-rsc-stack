@@ -1,37 +1,17 @@
 "use client-entry";
 
-import type { ReactNode } from "react";
-import { hydrate, fetchRSC } from "@parcel/rsc/client";
+import { fetchRSC } from "@parcel/rsc/client";
+import { startTransition, type ReactNode } from "react";
+import { hydrateRoot } from "react-dom/client";
 import { activityStore } from "./core/activity-store";
-
-console.log("LOADED");
+import { HistoryRouter } from "./routes.client";
 
 activityStore.reset();
 activityStore.push(location.pathname);
 
-let updateRoot = hydrate({
-  // Setup a callback to perform server actions.
-  // This sends a POST request to the server, and updates the page with the response.
-  async callServer(id, args) {
-    let { result, root } = await fetchRSC<{ root: ReactNode; result: any }>(
-      location.pathname,
-      {
-        method: "POST",
-        headers: {
-          "rsc-action-id": id,
-        },
-        body: args,
-      },
-    );
-    updateRoot(root);
-    return result;
-  },
-  // Intercept HMR window reloads, and do it with RSC instead.
-  onHmrReload() {
-    activityStore.reset();
-    activityStore.push(location.pathname);
-    navigate(location.pathname);
-  },
+
+startTransition(() => {
+  hydrateRoot(document, <HistoryRouter />);
 });
 
 // A very simple router. When we navigate, we'll fetch a new RSC payload from the server,
@@ -41,18 +21,14 @@ async function navigate(
   pathname: string,
   mutateHistory: "push" | "replace" | undefined = undefined,
 ) {
-  let root = await fetchRSC<ReactNode>(pathname);
+  // let root = await fetchRSC<ReactNode>(pathname);
   if (mutateHistory === "push") {
     activityStore.push(pathname);
+    history.pushState(null, "", pathname);
   }
-  updateRoot(root, () => {
-    if (mutateHistory === "push") {
-      history.pushState(null, "", pathname);
-    }
-    if (mutateHistory === "replace") {
-      history.replaceState(null, "", pathname);
-    }
-  });
+  if (mutateHistory === "replace") {
+    history.replaceState(null, "", pathname);
+  }
 }
 
 // Intercept link clicks to perform RSC navigation.

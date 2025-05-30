@@ -1,5 +1,6 @@
 "use server-entry";
 
+import "../../client.tsx";
 import { Activity } from "../../core/Activity";
 import { AppScreen } from "../../ui/AppScreen";
 import { Post } from "../_Post/Post";

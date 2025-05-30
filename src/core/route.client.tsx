@@ -1,14 +1,14 @@
 import { fetchRSC } from "@parcel/rsc/client";
-import * as React from "react";
 import { JSX } from "react";
 import { ActivityProvider } from "./Activity";
 import { ActivityState } from "./activity-store";
-import { LayoutProps, PageProps } from "./route";
+import { hashRoute, LayoutProps, PageProps } from "./route";
 import { useActivityStore } from "./useActivityStore";
 
 //////// temporal
 export interface PageRouteClient {
   type: "page";
+  id: string;
   path: string;
   component?: (
     props: PageProps<any, any>,
@@ -17,18 +17,20 @@ export interface PageRouteClient {
 
 export interface LayoutRouteClient {
   type: "layout";
+  id: string;
   children: (PageRouteClient | LayoutRouteClient)[];
   component?: (props: LayoutProps<any>) => JSX.Element | Promise<JSX.Element>;
 }
 
-export function routeClient(path: string): PageRouteClient {
-  return { type: "page", path };
+export function routeClient(id: string, path: string): PageRouteClient {
+  return { type: "page", id, path };
 }
 
 export function layoutClient(
+  id: string,
   children: (PageRouteClient | LayoutRouteClient)[],
 ): LayoutRouteClient {
-  return { type: "layout", children };
+  return { type: "layout", id, children };
 }
 
 ////////
@@ -41,22 +43,28 @@ export function buildHistoryComponent(
     history: ActivityState[],
   ) {
     if (route.type === "layout") {
-      const Layout = React.lazy(() => fetchRSC("xxx"));
-      const children = route.children
-        .map((child) => buildComponentRecursive(child, history))
-        .filter((c) => c !== undefined);
+      if (!route.component) {
+        route.component = fetchRSC(hashRoute(route) + ".rsc");
+      }
+      const Layout = route.component;
+      const children = route.children.map((child) =>
+        buildComponentRecursive(child, history),
+      );
 
-      return <Layout params={{}}>{children}</Layout>;
+      return <route.component />;
     }
     if (route.type === "page") {
       const state = history.find((h) => h.path === route.path);
 
       if (!state) return null;
 
-      const Page = React.lazy(() => fetchRSC(route.path));
+      if (!route.component) {
+        route.component = fetchRSC(route.path + ".rsc");
+      }
+
       return (
-        <ActivityProvider state={state}>
-          <Page params={{}} searchParams={{}} />
+        <ActivityProvider key={route.path} state={state}>
+          {route.component}
         </ActivityProvider>
       );
     }

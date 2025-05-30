@@ -10,6 +10,7 @@
   "server": "dist/server.js",
   "targets": {
     "server": {
+      "scopeHoist": false,
       "source": "src/server.tsx",
       "context": "react-server",
       "includeNodeModules": {
@@ -31,8 +32,8 @@
   },
   "devDependencies": {
     "@types/express": "^4",
-    "@types/parcel-env": "^0.0.9",
     "@types/node": "^22.10.5",
+    "@types/parcel-env": "^0.0.9",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "parcel": "^2.15.1"

@@ -52,7 +52,7 @@ const friendLikes: FriendLike[] = [
 export async function getPost(id: string) {
   const post = posts.find((post) => post.id === id);
   if (!post) {
-    throw new Error("Post not found");
+    throw new Error("Post not found: " + id);
   }
   return post;
 }

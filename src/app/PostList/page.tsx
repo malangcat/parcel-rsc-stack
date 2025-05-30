@@ -1,5 +1,6 @@
 "use server-entry";
 
+import "../../client.tsx";
 import { Activity } from "../../core/Activity";
 import { getRecentPostIds } from "../../mock";
 import { AppScreen } from "../../ui/AppScreen";

@@ -52,13 +52,25 @@ export function layout<
   return { type: "layout", component, children };
 }
 
+
+export function hashRoute(route: PageRoute | LayoutRoute): string {
+  if (route.type === "page") {
+    return route.path;
+  }
+  if (route.type === "layout") {
+    // for test
+    return "/" + encodeURIComponent(route.children.map(x => x.type === "page" ? x.path : "%%").join("__"))
+  }
+  return "error";
+}
+
 interface FlattenedRoute {
   path: string;
   layouts: LayoutRoute[];
   component: (props: PageProps<any, any>) => JSX.Element | Promise<JSX.Element>;
 }
 
-export function flattenRoutes(
+function flattenRoutes(
   routes: (PageRoute | LayoutRoute)[],
 ): FlattenedRoute[] {
   const flattenedResult: FlattenedRoute[] = [];
@@ -89,7 +101,7 @@ export function flattenRoutes(
   return flattenedResult;
 }
 
-export function buildRouteComponent(
+function buildRouteComponent(
   flatRoute: FlattenedRoute,
 ): React.ComponentType<PageProps<any, any>> {
   const { path, layouts, component: Page } = flatRoute;
@@ -108,7 +120,7 @@ export function buildRouteComponent(
             present: true,
           }}
         >
-          <Page key={path + index.toString()} {...currentProps} />
+          <Page {...currentProps} />
         </ActivityProvider>
       );
     }
@@ -116,11 +128,54 @@ export function buildRouteComponent(
     const layoutDefinition = layouts[index];
     const Layout = layoutDefinition.component;
     return (
-      <Layout key={path + index.toString()} params={currentProps.params}>
+      <Layout params={currentProps.params}>
         {buildComponentRecursive(index + 1, currentProps)}
       </Layout>
     );
   }
 
   return (props: PageProps<any, any>) => buildComponentRecursive(0, props);
+}
+
+export function buildSsrRoutes(
+  routes: (PageRoute | LayoutRoute)[],
+) {
+  return flattenRoutes(routes).map((x) => ({
+    path: x.path,
+    Comp: buildRouteComponent(x),
+  }));
+}
+
+export function buildRscRoutes(
+  routes: (PageRoute | LayoutRoute)[],
+) {
+  const result: {
+    path: string;
+    Comp: React.ComponentType<any>;
+  }[] = []
+
+  function recursive(
+    routes: (PageRoute | LayoutRoute)[],
+  ) {
+    for (const route of routes) {
+      if (route.type === "layout") {
+        const layout = route as LayoutRoute;
+        result.push({
+          path: hashRoute(layout),
+          Comp: layout.component,
+        });
+        recursive(layout.children);
+      } else {
+        const page = route as PageRoute;
+        result.push({
+          path: hashRoute(page),
+          Comp: page.component,
+        })
+      }
+    }
+  }
+
+  recursive(routes);
+
+  return result;
 }
